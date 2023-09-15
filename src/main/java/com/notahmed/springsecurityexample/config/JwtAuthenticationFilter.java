@@ -6,7 +6,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -24,6 +28,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
 
 
+    private final UserDetailsService userDetailsService;
 
 
 
@@ -57,8 +62,51 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         userEmail = jwtService.extractUsername(jwt);
 
         // check if userEmail is not null and user is already authenticated
+        // email exists in token and not authenticated and connected yet
+        //
+
+
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            
+
+            // get user from database and check if it exists
+
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+
+            // check if token is valid
+            if (jwtService.isTokenValid(jwt, userDetails)) {
+
+                // if token is valid then update SecurityContextHolder
+                // send request DispatcherServlet
+
+
+                // when we create user there is not credentials
+
+
+                // needed by Spring and Security Context Holder to update Context Holder
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities()
+                        );
+
+
+                // adding extra details to the token
+                authToken.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request)
+
+                );
+
+                // updating the context holder
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+            }
+
         }
+
+        // header will be empty of not entered the if
+
+        // pass to next filter
+        filterChain.doFilter(request, response);
+
+
     }
 }
