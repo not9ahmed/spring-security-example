@@ -41,6 +41,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
 
+        System.out.println(request.getHeader("Authorization"));
+
+
         // to pass jwt inside header
         // header that contains the bearer token
         final String authHeader = request.getHeader("Authorization");
@@ -48,7 +51,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String userEmail;
 
         // check if the Authorization exists and if it starts with bearer
-        if (authHeader == null || !authHeader.startsWith("bearer ")) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+
+            System.out.println("inside if");
             filterChain.doFilter(request, response);
 
             // to stop execution of the filters
@@ -57,6 +62,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // get token after bearer space keyword
         jwt = authHeader.substring(7);
+
+        System.out.println("jwt " + jwt);
 
         //extract user email from jwt token;
         userEmail = jwtService.extractUsername(jwt);
@@ -68,6 +75,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
+            System.out.println("userEmail  " + userEmail);
             // get user from database and check if it exists
 
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
